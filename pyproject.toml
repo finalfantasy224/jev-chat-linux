@@ -1,0 +1,31 @@
+[project]
+name = "jev-chat-linux"
+version = "0.1.0"
+description = "微信消息意图识别悬浮窗（Ubuntu Linux）：看屏 + 本地小模型判断意图和风险，再按话术生成回复候选。纯只读、不注入微信。"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyQt6>=6.5.0",
+    "mss>=9.0.0",
+    "pytesseract>=0.3.10",
+    "Pillow>=10.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "huggingface-hub>=0.24.0",
+    "torch>=2.0.0",
+    "transformers>=4.36.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src", "src.*"]
