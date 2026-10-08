@@ -43,7 +43,7 @@ BUILTIN_SOURCE = "内置默认"
 PROMPT_ONE = """刚收到一条微信消息，你要帮我回。
 
 {context_line}消息：「{message}」
-{intent_line}
+{intent_line}{reference_line}
 请写 {n} 条回复候选，语气统一成下面这一种，但两条的胆量要有差别：
 「{tone}」{instruction}
 
@@ -292,13 +292,15 @@ class Generator:
         return out
 
     def _one_tone(self, message: str, intent: str, tone: str, instruction: str,
-                  context: str | None = None) -> tuple[list[str], str]:
+                  context: str | None = None,
+                  reference: str | None = None) -> tuple[list[str], str]:
         """为一种话术生成回复"""
         context_line = f"最近的对话：\n{context}\n\n" if context else ""
         intent_line = f"判断出的意图：{intent}\n" if intent else ""
+        reference_line = f"\n参考信息：\n{reference}\n\n" if reference else ""
         prompt = PROMPT_ONE.format(
             message=message, context_line=context_line,
-            intent_line=intent_line,
+            intent_line=intent_line, reference_line=reference_line,
             n=PER_TONE, tone=tone, instruction=instruction,
         )
         
@@ -356,7 +358,20 @@ class Generator:
                 instruction = builtin.BUILTIN_TONES[tone][1]
             else:
                 instruction = "保持自然礼貌的语气"
-            return self._one_tone(message, intent, tone, instruction, context)
+
+            # 高性价比人生指南：注入相关条目到 prompt
+            reference = None
+            if tone == "hltb":
+                from src import hltb_guide  # 惰性导入，不占内存
+                relevant = hltb_guide.find_relevant(message, top_n=5)
+                if relevant:
+                    refs = "\n".join(
+                        f"  • [{r['chapter']}] {r['title']}：{r['core']}"
+                        for r in relevant
+                    )
+                    reference = f"《高性价比人生指南》相关条目：\n{refs}"
+
+            return self._one_tone(message, intent, tone, instruction, context, reference)
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(active)) as ex:
             futures = {i: ex.submit(run, i, tone) for i, tone in active}
